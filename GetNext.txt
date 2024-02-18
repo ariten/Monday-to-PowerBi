@@ -1,0 +1,21 @@
+let
+    Source = (cursor as text) as table =>
+let
+    web = Web.Contents(
+        "https://api.monday.com/" & "v2",
+    [
+        Headers=[
+            #"Method"="POST",
+            #"Content-Type"="application/json",
+            #"Authorization"="<YOUR TOKEN>"
+            ],
+            Content=Text.ToBinary("{""query"": ""{next_items_page(limit:500, cursor: \"""  & cursor & "\"" ){cursor items { id name group {title} column_values (ids: [\""numbers8\"", \""date78\"", \""date75\"", \""status\"", \""dropdown96\"", \""status_10\"", \""date0\""]) { id value text column {title}}}}}""}")
+            ]
+    ),
+    #"2ndJSON" = Json.Document(web, 65001),
+    data1 = #"2ndJSON"[data][next_items_page],
+    #"Converted to Table1" = Record.ToTable(data1)
+in
+   #"Converted to Table1"
+in 
+    Source

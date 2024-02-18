@@ -1,0 +1,22 @@
+let
+    Lists = List.Generate( 
+        () => [Result = GetFirst(2075228046)],
+        each [Result]{0}[Value] <> null,
+        each [Result = GetNext([Result]{0}[Value])]
+    ),
+	#"ExapndLists" = Table.FromList(Lists, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"ExpandRecords" = Table.ExpandRecordColumn(#"ExapndLists", "Column1", {"Result"}, {"Column1.Table"}),
+    #"Expanded Column1.Table" = Table.ExpandTableColumn(ExpandRecords, "Column1.Table", {"Name", "Value"}, {"Column1.Table.Name", "Column1.Table.Value"}),
+    #"Filtered Rows" = Table.SelectRows(#"Expanded Column1.Table", each ([Column1.Table.Name] = "items")),
+    #"Converted to Table" = Table.FromList(#"Filtered Rows"[Column1.Table.Value], Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Expanded Column1" = Table.ExpandListColumn(#"Converted to Table", "Column1"),
+    #"Expanded Column2" = Table.ExpandRecordColumn(#"Expanded Column1", "Column1", {"id","name","group", "column_values"}, {"Column1.id","Column1.name","Column1.group", "Column1.column_values"}),
+    #"Expanded Column1.column_values" = Table.ExpandListColumn(#"Expanded Column2", "Column1.column_values"),
+    #"Expanded Column1.column_values1" = Table.ExpandRecordColumn(#"Expanded Column1.column_values", "Column1.column_values", {"column", "text"}, {"Column1.column_values.columns", "Column1.column_values.text"}),
+    #"Expanded Column1.column_values.columns" = Table.ExpandRecordColumn(#"Expanded Column1.column_values1", "Column1.column_values.columns", {"title"}, {"Column1.column_values.columns.title"}),
+    #"Expanded Column1.group" = Table.ExpandRecordColumn(#"Expanded Column1.column_values.columns", "Column1.group", {"title"},{"Column1.group.title"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Expanded Column1.group",{{"Column1.column_values.columns.title", type text}, {"Column1.group.title", type text}}),
+	#"Pivoted Column" = Table.Pivot(#"Changed Type", List.Distinct(#"Changed Type"[Column1.column_values.columns.title]), "Column1.column_values.columns.title", "Column1.column_values.text"),
+    #"Renamed Columns" = Table.RenameColumns(#"Pivoted Column",{{"Column1.name", "Name"}, {"Column1.group.title", "Group"}, {"Column1.id", "ID"}})
+in
+	#"Rename Columns"
